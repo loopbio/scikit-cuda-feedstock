@@ -1,0 +1,71 @@
+# Find our git repo: https://github.com/loopbio/scikit-cuda-feedstock
+#
+# Originally from:
+#   https://github.com/neurokernel/scikit-cuda_conda_recipe
+
+{%set build = 0 %}
+{%set version = '0.5.1' %}
+
+package:
+  name: scikit-cuda
+  version: {{version}}
+
+about:
+  home: http://github.com/lebedov/scikit-cuda
+  license: BSD License
+  summary: "Python interface to GPU-powered libraries."
+
+source:
+  fn: scikit-cuda-{{version}}.tar.gz
+  url: https://pypi.python.org/packages/source/s/scikit-cuda/scikit-cuda-{{version}}.tar.gz
+  md5: 85799293d64886501e84c7b41a808fe2
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - numpy
+    - mako
+    - pycuda
+    - cuda80-feature  # otherwise we risk not finding the right deps
+
+    # For testing
+    - pytest
+    - scipy
+
+
+  run:
+    - python
+    - numpy
+    - mako
+    - pycuda
+
+    # account for scikit-cuda weirdnesses
+    - setuptools  # yes, this is needed too at runtime
+    - pytest      # yes, this is needed too at runtime
+
+build:
+  number: {{build}}
+  string: py{{py}}_{{build}}
+  features:
+    - cuda80
+  script:
+    - python setup.py install --single-version-externally-managed --record record.txt
+    # N.B. test right after build (incl. nasty LD_LIBRARY intervention).
+    # That nvidia centos image is not in a great state...
+    # Again, nastily commented because we are hitting this issue:
+    #   https://github.com/lebedov/scikit-cuda/issues/171
+    # Revisit and reenable when time allows
+    # (these are parts of the libs unused by neon so do not affect us really)
+    # - LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/nvidia/lib64:/usr/local/cuda/targets/x86_64-linux/ py.test
+
+test:
+  requires:
+    - cuda80-feature
+  imports:
+    - skcuda
+    # need something more challenging
+
+extra:
+  recipe-maintainers:
+    - sdvillal (loopbion changes)
